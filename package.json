@@ -11,6 +11,7 @@
   "dependencies": {
     "phantom": "^2.1.21",
     "phantom-url": "^1.0.0",
+    "sanitize-filename": "^1.6.0",
     "sleep": "^4.0.0",
     "webpage": "^0.3.0"
   }
