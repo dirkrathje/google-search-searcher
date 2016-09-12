@@ -15,7 +15,7 @@ const query1 = "customer+journey"
 const num = 100;
 
 // lr: Restriction of searches to pages in the specified language
-const lr = ""
+const lr = "lang_en"
     // const lr = "lang_de"
     // const lr = "lang_en"
 
@@ -98,7 +98,8 @@ Phantom.create()
                 })
                 .then(status => {
                     console.log("Response status: " + status + " (i: " + i + "; url: " + d + ")");
-                    return resultPages[i].property('content');
+                    if (status === "success")
+                        return resultPages[i].property('content');
                 })
                 .then(content => {
 
