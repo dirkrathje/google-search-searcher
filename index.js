@@ -90,6 +90,7 @@ Phantom.create()
             promises.push(phantomInstance.createPage()
                 .then(page => {
                     resultPages.push(page);
+                    result.searchResults[i].googleRank = i;
                     result.searchResults[i].url = d;
 
                     console.log("Opening url: " + i + ". " + d);
