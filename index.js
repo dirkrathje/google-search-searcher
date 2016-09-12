@@ -2,6 +2,8 @@ const Phantom = require('phantom');
 const url = require('url');
 const Sanitize = require("sanitize-filename");
 const Fs = require("fs");
+const Path = require("path");
+
 
 // https://github.com/NikolaiT/GoogleScraper/blob/master/GoogleScraper/search_engine_parameters.py
 
@@ -10,7 +12,7 @@ const query1 = "customer+journey"
     // const query1 = "customer+and+journey"
 
 // num:  number of search results we want Google to deliver, Google delivers 100 results max
-const num = 50;
+const num = 100;
 
 // lr: Restriction of searches to pages in the specified language
 const lr = ""
@@ -55,6 +57,7 @@ Phantom.create()
         googleResultPage = page;
         googleResultPage.setting.javascriptEnabled = false;
         result.googleSearchUrl = searchUrl;
+        result.date = new Date();
         console.log("Opening url: " + searchUrl)
         return page.open(searchUrl);
         // return page.open('google-result/2016-09-11-1900.htm');
@@ -93,7 +96,7 @@ Phantom.create()
                     return page.open(d);
                 })
                 .then(status => {
-                    console.log("Response status: " + status + " (url: " + d + ")");
+                    console.log("Response status: " + status + " (i: " + i + "; url: " + d + ")");
                     return resultPages[i].property('content');
                 })
                 .then(content => {
@@ -117,6 +120,8 @@ Phantom.create()
                         }
                     })
 
+                    result.searchResults[i].searchResultsPositives = numberOfFoundTerms;
+
                     console.log("Found " + numberOfFoundTerms + " term(s) at '" + d + "'.");
 
                     // return resultPages[i].close();
@@ -129,10 +134,15 @@ Phantom.create()
 
     })
     .then(promiseAll => {
+
+        result.numberOfPositives = result.searchResults.map(r => r.searchResultsPositives).reduce(function(previousValue, currentValue, currentIndex, array) {
+            return previousValue + currentValue;
+        });
+
         let json = JSON.stringify(result, null, "  ");
         console.log(json);
 
-        Fs.writeFileSync(Sanitize(searchUrl + ".json"), json)
+        Fs.writeFileSync(Path.join(Sanitize(searchUrl + ".json")), json)
 
 
         phantomInstance.exit();
