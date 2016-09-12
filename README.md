@@ -10,8 +10,6 @@ Node.js script that searches Google search results to a query Q1 for terms of a 
 # Adpation to your needs
 
 ```
-
-
 // query1: first search query for Google Search
 const query1 = "customer+journey"
     // const query1 = "customer+and+journey"
@@ -26,9 +24,4 @@ const lr = ""
 
 // query2_terms: terms of second search for the search results
 const query2_terms = ["McKinsey", "Court"]
-
-
-
-
-
 ```
