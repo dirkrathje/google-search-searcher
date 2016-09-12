@@ -3,6 +3,8 @@ const url = require('url');
 const Sanitize = require("sanitize-filename");
 const Fs = require("fs");
 const Path = require("path");
+const mkdirp = require('mkdirp');
+const Nightmare = require('nightmare');
 
 
 // https://github.com/NikolaiT/GoogleScraper/blob/master/GoogleScraper/search_engine_parameters.py
@@ -12,7 +14,7 @@ const query1 = "customer+journey"
     // const query1 = "customer+and+journey"
 
 // num:  number of search results we want Google to deliver, Google delivers 100 results max
-const num = 100;
+const num = 50;
 
 // lr: Restriction of searches to pages in the specified language
 const lr = "lang_en"
@@ -24,7 +26,6 @@ const query2_terms = ["McKinsey", "Court"]
 
 
 
-
 const parameters = []
 
 if (query1) parameters.push("q=" + query1)
@@ -32,6 +33,9 @@ if (num) parameters.push("num=" + num)
 if (lr) parameters.push("lr=" + lr)
 
 const searchUrl = "https://www.google.de/search?" + parameters.join("&");
+
+const resultPath = "result_" + (new Date()) + query1 + "_" + num + "_" + lr;
+mkdirp(resultPath);
 
 // array to store the pages that the Google search results link to
 const resultPages = [];
@@ -79,7 +83,7 @@ Phantom.create()
         const allLinks = hrefs.map(d => url.parse(d, true).query.q);
 
         console.log("Filtering links starting with 'http' (this removes links to Google Search)")
-        const allProperLinks = allLinks.filter(d => d.indexOf("http") === 0);
+        const allProperLinks = allLinks.filter((d, i) => i > 0 && d.indexOf("http") === 0);
 
         result.searchResults = [];
         let promises = [];
@@ -89,6 +93,8 @@ Phantom.create()
 
             promises.push(phantomInstance.createPage()
                 .then(page => {
+
+                    page.setting.javascriptEnabled = false;
                     resultPages.push(page);
                     result.searchResults[i].googleRank = i;
                     result.searchResults[i].url = d;
@@ -103,8 +109,15 @@ Phantom.create()
                 })
                 .then(content => {
 
-                    // result.searchResults[i].content = content;
                     result.searchResults[i].searchResults = [];
+
+                    let resultFolder = Path.join(resultPath, Sanitize(i + "-" + d))
+
+                    mkdirp(resultFolder);
+                    Fs.writeFileSync(Path.join(resultFolder, "content.html"), content);
+
+                    result.searchResults[i].content = content;
+
 
                     console.log("Searching for terms of query2 in content of " + d + ")");
                     let numberOfFoundTerms = 0;
@@ -115,7 +128,7 @@ Phantom.create()
                         searchResult.term = e;
                         searchResult.found = false;
 
-                        if (content.indexOf(e) > -1) {
+                        if (content && content.indexOf(e) > -1) {
                             searchResult.found = true;
                             console.log("Found '" + e + "' at search results " + i + " (" + d + ")");
                             numberOfFoundTerms++;
@@ -124,9 +137,16 @@ Phantom.create()
 
                     result.searchResults[i].searchResultsPositives = numberOfFoundTerms;
 
+                    Fs.writeFileSync(Path.join(resultFolder, "result.json"), JSON.stringify(result.searchResults[i], null, "  "));
+
+
                     console.log("Found " + numberOfFoundTerms + " term(s) at '" + d + "'.");
 
-                    // return resultPages[i].close();
+
+                    return resultPages[i].close();
+                })
+                .catch(error => {
+                    console.log(error);
                 })
             )
 

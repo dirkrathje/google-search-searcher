@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "mkdirp": "^0.5.1",
     "phantom": "^2.1.21",
     "phantom-url": "^1.0.0",
     "sanitize-filename": "^1.6.0",
