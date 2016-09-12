@@ -1,0 +1,17 @@
+{
+  "name": "customer-journey-google-search",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "phantom": "^2.1.21",
+    "phantom-url": "^1.0.0",
+    "sleep": "^4.0.0",
+    "webpage": "^0.3.0"
+  }
+}
