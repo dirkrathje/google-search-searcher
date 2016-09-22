@@ -6,6 +6,9 @@ const Path = require("path");
 const mkdirp = require('mkdirp');
 const Nightmare = require('nightmare');
 
+const nightmare = new Nightmare({
+    show: true
+});
 
 // https://github.com/NikolaiT/GoogleScraper/blob/master/GoogleScraper/search_engine_parameters.py
 
@@ -14,7 +17,7 @@ const query1 = "customer+journey"
     // const query1 = "customer+and+journey"
 
 // num:  number of search results we want Google to deliver, Google delivers 100 results max
-const num = 50;
+const num = 10;
 
 // lr: Restriction of searches to pages in the specified language
 const lr = "lang_en"
@@ -34,7 +37,7 @@ if (lr) parameters.push("lr=" + lr)
 
 const searchUrl = "https://www.google.de/search?" + parameters.join("&");
 
-const resultPath = "result_" + (new Date()) + query1 + "_" + num + "_" + lr;
+const resultPath = "result/" + (new Date()) + query1 + "_" + num + "_" + lr;
 mkdirp(resultPath);
 
 // array to store the pages that the Google search results link to
@@ -86,88 +89,45 @@ Phantom.create()
         const allProperLinks = allLinks.filter((d, i) => i > 0 && d.indexOf("http") === 0);
 
         result.searchResults = [];
+
         let promises = [];
-
         allProperLinks.forEach((d, i) => {
-            result.searchResults[i] = {}
 
-            promises.push(phantomInstance.createPage()
-                .then(page => {
+            let searchResult = {}
+            searchResult.url = d;
+            searchResult.query2TermsFound = [];
+            result.searchResults[i] = searchResult
 
-                    page.setting.javascriptEnabled = false;
-                    resultPages.push(page);
-                    result.searchResults[i].googleRank = i;
-                    result.searchResults[i].url = d;
+            let resultFolder = Path.join(resultPath, Sanitize(i + "-" + d))
+            mkdirp(resultFolder);
 
-                    console.log("Opening url: " + i + ". " + d);
-                    return page.open(d);
+            let selector = "body";
+            promises.push(
+                nightmare
+                .goto(d)
+                .wait()
+                // .html(Path.join(resultFolder, "content.html"))
+                .evaluate(function() {
+                    return document.querySelector('body').innerText;
+                }, function(res) {
+                    console.log(res)
                 })
-                .then(status => {
-                    console.log("Response status: " + status + " (i: " + i + "; url: " + d + ")");
-                    if (status === "success")
-                        return resultPages[i].property('content');
-                })
-                .then(content => {
-
-                    result.searchResults[i].searchResults = [];
-
-                    let resultFolder = Path.join(resultPath, Sanitize(i + "-" + d))
-
-                    mkdirp(resultFolder);
-                    Fs.writeFileSync(Path.join(resultFolder, "content.html"), content);
-
-                    result.searchResults[i].content = content;
-
-
-                    console.log("Searching for terms of query2 in content of " + d + ")");
-                    let numberOfFoundTerms = 0;
-                    query2_terms.forEach(e => {
-
-                        let searchResult = {};
-                        result.searchResults[i].searchResults.push(searchResult);
-                        searchResult.term = e;
-                        searchResult.found = false;
-
-                        if (content && content.indexOf(e) > -1) {
-                            searchResult.found = true;
-                            console.log("Found '" + e + "' at search results " + i + " (" + d + ")");
-                            numberOfFoundTerms++;
-                        }
-                    })
-
-                    result.searchResults[i].searchResultsPositives = numberOfFoundTerms;
-
+                .run(function(err, nightmare) {
                     Fs.writeFileSync(Path.join(resultFolder, "result.json"), JSON.stringify(result.searchResults[i], null, "  "));
-
-
-                    console.log("Found " + numberOfFoundTerms + " term(s) at '" + d + "'.");
-
-
-                    return resultPages[i].close();
-                })
-                .catch(error => {
-                    console.log(error);
+                    if (err) return console.log(err);
+                    console.log('Done!');
                 })
             )
-
-        })
-
-        return Promise.all(promises)
-
-    })
-    .then(promiseAll => {
-
-        result.numberOfPositives = result.searchResults.map(r => r.searchResultsPositives).reduce(function(previousValue, currentValue, currentIndex, array) {
-            return previousValue + currentValue;
         });
 
+        return Promise.all(promises)
+    })
+    .then(promises => {
         let json = JSON.stringify(result, null, "  ");
-        console.log(json);
-
         Fs.writeFileSync(Path.join(Sanitize(searchUrl + ".json")), json)
-
-
         phantomInstance.exit();
+
+
     })
     .catch(error => {
         console.log(error);

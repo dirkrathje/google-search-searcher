@@ -10,10 +10,12 @@
   "license": "ISC",
   "dependencies": {
     "mkdirp": "^0.5.1",
+    "nightmare": "^2.7.0",
     "phantom": "^2.1.21",
     "phantom-url": "^1.0.0",
     "sanitize-filename": "^1.6.0",
     "sleep": "^4.0.0",
+    "vo": "^4.0.2",
     "webpage": "^0.3.0"
   }
 }
